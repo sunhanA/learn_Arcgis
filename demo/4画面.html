@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+  <style>
+    #container{
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <script src="https://js.arcgis.com/4.12"></script>
+  <script>
+    require([
+      'esri/Map',
+      'esri/views/MapView',
+      'esri/Graphic',
+    ], (
+      BaseMap,
+      MapView,
+      Graphic,
+      Polygon,
+      FillSymbol
+    ) => {
+      let baseMap = new BaseMap({
+        basemap: 'streets-navigation-vector'
+      })
+
+      let view = new MapView({
+        container: 'container',
+        map: baseMap,
+        center: [114, 31],
+        zoom: 12
+      })
+
+
+      let polygon = {
+        type: 'polygon',
+        /* rings: [     //画一个正方形路径，注意最终的点应该闭合，也就是终点应该回到初始点位置闭合。单个区域
+          // 交叉标记点，可以看到部分填充，
+          // [114, 31],
+          // [115, 30],
+          // [114, 30],
+          // [115, 31],
+          // [114, 31],
+
+          // 顺时针标记点，正常填充颜色
+          [114, 31],
+          [115, 31],
+          [115, 30],
+          [114, 30],
+          [114, 31],  
+
+          // 逆时针标记点，无法正常填充
+          // [114, 31],
+          // [115, 31],
+          // [115, 32],
+          // [114, 32],
+          // [114, 31],  
+        ] */
+
+        rings: [     //多个区域，结果全部都可以填充
+          // [
+          //   // 顺时针标记点
+          //   [114, 31],
+          //   [115, 31],
+          //   [115, 30],
+          //   [114, 30],
+          //   [114, 31],  
+          // ],
+          [
+            // 逆时针标记点
+            [114, 31],
+            [115, 31],
+            [115, 32],
+            [114, 32],
+            [114, 31],  
+          ]
+        ]
+      }
+
+      let polygonStyle = {
+        type: 'simple-fill',
+        color: [255, 0, 0, 1],
+        outline: {
+          color: [0, 255, 255],
+          width: 2
+        }
+      }
+
+      let polygonGraphic = new Graphic({
+        geometry: polygon,
+        symbol: polygonStyle
+      })
+
+      view.graphics.add(polygonGraphic)
+    })
+  </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+  <style>
+    #container{
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  
+  <script src="https://js.arcgis.com/4.12"></script>
+  <script>
+    require([
+      'esri/Map',
+      'esri/views/MapView',
+      'esri/Graphic',
+      'esri/layers/FeatureLayer',
+      'esri/geometry/geometryEngine'
+    ], (
+      BaseMap,
+      MapView,
+      Graphic,
+      FeatureLayer,
+      geometryEngine
+    ) => {  
+      let baseMap = new BaseMap({ basemap: 'streets-navigation-vector' })
+
+      let view = new MapView({
+        container: 'container',
+        map: baseMap,
+        center: [-118.80543, 34.02700],
+        zoom: 12
+      })
+
+      let featureLayer = new FeatureLayer({
+        url: 'https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Trails_Styled/FeatureServer/0'
+      })
+
+      baseMap.add(featureLayer)     //注意，图层 是添加到Map对象上面
+      console.log('featureLayer', featureLayer)
+
+      let activeGraphic   //当前featureLayer 上面的激活（鼠标悬浮）片段
+      // 查找到当前鼠标位置 最近的featureLayer 片段
+      function findNearestGraphic(event) {
+        return view.hitTest(event).then((response) => {
+          // console.log('findNearestGraphic', response)
+          let graphic
+          if(response.results.length) {
+            let resultsFind = response.results.filter((result) => {
+              return (result.graphic.layer === featureLayer)
+            })
+            console.log('--resultsFind', resultsFind)
+            graphic = resultsFind[0].graphic
+          }
+
+          if(graphic) {
+            console.log('--OBJECTID', graphic.attributes.OBJECTID)
+            if(!activeGraphic || (activeGraphic.attributes.OBJECTID !== graphic.attributes.OBJECTID)) {
+              return graphic  //鼠标正悬浮的 featureLayer 片段
+            }
+            else {
+              return null
+            }
+          }
+          else {
+            return null
+          }
+        })
+      }
+
+
+      let bufferGraphic
+      // 绘制填充区域，激活当前悬浮片段
+      function drawBuffer(bufferGeometry) {
+        view.graphics.remove(bufferGraphic)
+        bufferGraphic = new Graphic({   //
+          geometry: bufferGeometry,
+          symbol: {
+            type: 'simple-fill',
+            color: 'rgba(0, 0, 0, 0.15)',
+            outline: {
+              color: 'rgba(0, 0, 0, 0.5)',
+              width: 1
+            }
+          }
+        })
+        view.graphics.add(bufferGraphic)
+      }
+
+     /*地图区域点击事件
+      view.on('click', (e) => {
+        // console.log('click', arguments)
+        console.log('view click', e)
+      }) */
+
+      view.on('pointer-move', (event) => {
+        console.log('**point-move', event)
+        findNearestGraphic(event)
+          .then((graphic) => {
+            console.log('**graphic', graphic)
+            if(graphic) {
+              activeGraphic = graphic   //鼠标悬浮的featureLayer 图层片段也就是激活片段，原始片段
+              let buffer = geometryEngine.geodesicBuffer(activeGraphic.geometry, .25, 'miles')  //原始片段改造，扩大周边范围，指定周边半径
+              drawBuffer(buffer)
+            }
+          })
+        
+        if(bufferGraphic) {
+          let cursorPoint = view.toMap(event) //将当前鼠标在屏幕上面的坐标信息，注意是屏幕上的(x，y),转化为地图里面的Point对象
+          let intersects = geometryEngine.intersects(bufferGraphic.geometry, cursorPoint) //判断当前点是否在激活片段上面
+          let symbol = bufferGraphic.symbol.clone()
+          if(intersects) {
+            // console.log(symbol === bufferGraphic.symbol)  //
+            symbol.color = 'rgba(0, 0, 0, 0.15)'
+          }
+          else {
+            symbol.color = 'rgba(0, 0, 0, 0)'
+          }
+          bufferGraphic.symbol = symbol
+
+          let vertexResult = geometryEngine.nearestVertex(bufferGraphic.geometry, cursorPoint)   //查找 激活图层上面的点 与 鼠标点直接的最短距离路径信息
+          let closestPoint =vertexResult.coordinate  //
+          drawLine(cursorPoint, closestPoint) //最短路径连线
+          // console.log('vertexResult', vertexResult)   
+          let distance = geometryEngine.geodesicLength(lineGraphic.geometry, 'miles')   //计算出实际距离
+          drawText(cursorPoint, distance)   //在当前鼠标点显示文字信息
+        }
+      })
+
+      let lineGraphic
+      function drawLine(point1, point2) {
+        view.graphics.remove(lineGraphic)
+        lineGraphic = new Graphic({
+          geometry: {
+            type: 'polyline',
+            paths: [
+              [point1.longitude, point1.latitude],
+              [point2.longitude, point2.latitude]
+            ]
+          },
+          symbol: {
+            type: 'simple-line',
+            color: '#333',
+            wdith: 1
+          }
+        })
+        view.graphics.add(lineGraphic)
+      }
+
+      let textGraphic
+      function drawText(point, distance) {
+        view.graphics.remove(textGraphic)
+        textGraphic = new Graphic({
+          geometry: point,
+          symbol: {
+            type: 'text',
+            text: distance.toFixed(2) + 'miles',
+            color: 'black',
+            font: {
+              size: 16
+            },
+            haloColor: 'white',   //文字光晕颜色
+            haloSize: 2           //文字光晕大小  类似文字阴影
+          }
+        })
+        view.graphics.add(textGraphic)
+      }
+    })
+  </script>
+</body>
+</html>

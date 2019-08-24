@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta charset="utf-8">
+  <style>
+    html, body{
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #container{
+      width: 600px;
+      height: 600px;
+    }
+  </style>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+  <script src="https://js.arcgis.com/4.12/"></script>
+<body>
+  <div id="container"></div>
+
+  <script>
+    // 2019年8月15日 22:27:46
+
+    require([
+      'esri/Map',
+      'esri/views/MapView',
+      'esri/geometry/Geometry',
+      'esri/Graphic'
+    ], (
+      BaseMap,
+      MapView,
+      Geometry,
+      Graphic,
+    ) => {
+      //1.先构造一个基本地图并选择需要的 地图种类
+      let baseMap = new BaseMap({
+        basemap: 'streets-navigation-vector'
+        /* 可选择的地图 种类
+          topo-vector
+          light-gray-vector
+          dark-gray-vector
+          street-navigation-vector
+          street-relief-vector
+        */
+      })
+
+      // 2.选择地图容器，将地图挂载到HTML 里面
+      let view = new MapView({
+        container: 'container',
+        map: baseMap,
+        center: [114.311784, 30.598401],
+        zoom: 12
+      })
+
+      // 地图通过 when(),传递两个回调，第一个为加载完成，第二个为错误回调
+      view.when(() =>{
+        console.log('view loaded', view.scale)  //地图加载完成，可以获取地图view的属性
+      }, (error) => {
+        console.log('error', error)
+      })
+      
+      console.log(view.scale)   //此时的地图还没加载完成，各属性会有偏差
+
+    })
+  
+  </script>
+</body>
+</html>

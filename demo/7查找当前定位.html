@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+  <style>
+    #container{
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  
+  <script src="https://js.arcgis.com/4.12"></script>
+  <script>
+    require([
+      'esri/Map',
+      'esri/views/MapView',
+      'esri/Graphic',
+      'esri/widgets/Locate',
+    ], (
+      BaseMap,
+      MapView,
+      Graphic,
+      Locate,
+    ) => {  
+      let baseMap = new BaseMap({ basemap: 'streets-navigation-vector' })
+
+      let view = new MapView({
+        container: 'container',
+        map: baseMap,
+        center: [130, 30],
+        zoom: 12
+      })
+
+      // 通过 esri/widgets/Locate  里面的Locate对象来实现当前设备定位
+      let locate = new Locate({
+        view: view,
+        useHeadingEnabled: false,
+        goToOverride: function(view, options) {
+          // 但是获取定位并没有触发，
+          console.log(options)
+          options.target.scale = 1500
+          return view.goto(options.target)
+        }
+      })
+
+      // widgets/里面的对象添加都是 添加到 MapView 实例对象上面
+      view.ui.add(locate, 'top-left')
+    })
+  </script>
+</body>
+</html>

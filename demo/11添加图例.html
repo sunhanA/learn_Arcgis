@@ -1,0 +1,63 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <style>
+    #viewDiv {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
+  <script src="https://js.arcgis.com/4.12/"></script>
+
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+    ], (
+      BaseMap,
+      MapView
+    ) => {
+      let baseMap = new BaseMap({
+        basemap: "streets-navigation-vector"
+      });
+
+      let view = new MapView({
+        container: "viewDiv",
+        map: baseMap,
+        center: [114, 30],
+        zoom: 11
+      });
+
+      let showLegend = document.createElement('div')
+      let imgStyle = 'width: 20px; height: 20px;'
+      let htmlStr = `
+        <ul>
+          <li style="padding: 6px; background: orange;"><img src="../src/images/logo.png" style="${imgStyle}" alt="">aaaa<button>点击</button></li>
+          <li><img src="../src/images/logo.png" style="${imgStyle}" alt="">aaaa<button>点击</button></li>
+          <li><img src="../src/images/logo.png" style="${imgStyle}" alt="">aaaa<button>点击</button></li>
+          <li><img src="../src/images/logo.png" style="${imgStyle}" alt="">aaaa<button>点击</button></li>
+        </ul>
+      `
+      showLegend.innerHTML = htmlStr
+      let listItem = document.getElementsByTagName('li')
+      view.when(() => {
+        console.log(listItem[0])  //listItem 是个类数组，无法直接使用forEach，虽然没有报错
+        Array.prototype.forEach.call(listItem, ((item, index) => {
+          item.addEventListener('click', () => {
+            alert(index)
+            // view.goTo({target: [114, 30], option: {speedFactor: 0.1, essing: 'out-quint'}})
+          })
+        }))
+      })
+
+      view.ui.add(showLegend, 'top-right')
+    });
+  </script>
+</head>
+<body>
+  <div id="viewDiv"></div>
+</body>
+</html>
